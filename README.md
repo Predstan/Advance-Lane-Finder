@@ -123,26 +123,30 @@ In order to identify which pixels of a given binary image belong to lane-lines, 
 On the other hand, if we're processing a video and we confidently identified lane-lines on the previous frame, we can limit our search in the neiborhood of the lane-lines we detected before: after all we're going at 30fps, so the lines won't be so far, right? This second approach is implemented in `line_utils.get_fits_by_previous_fits()`. In order to keep track of detected lines across successive frames, I employ a class defined in `line_utils.Line`, which helps in keeping the code cleaner.
 
 ```
-class Line:
+class Line():
+    def __init__(self, n_window):
+        # was the line detected in the last iteration?
+        self.n_window = n_window
 
-    def __init__(self, buffer_len=10):
-
-        # flag to mark if the line was detected the last iteration
-        self.detected = False
-
-        # polynomial coefficients fitted on the last iteration
-        self.last_fit_pixel = None
-        self.last_fit_meter = None
-
-        # list of polynomial coefficients of the last N iterations
-        self.recent_fits_pixel = collections.deque(maxlen=buffer_len)
-        self.recent_fits_meter = collections.deque(maxlen=2 * buffer_len)
-
-        self.radius_of_curvature = None
-
-        # store all pixels coords (x, y) of line detected
-        self.all_x = None
-        self.all_y = None
+        self.detected = False  
+        #polynomial coefficients for the most recent fit
+        self.current_fit = []
+        #radius of curvature of the line in some units
+        self.radius_of_curvature = None 
+        #distance in meters of vehicle center from the line
+        self.line_base_pos = None 
+        #difference in fit coefficients between last and new fits
+        self.diffs = np.array([0,0,0], dtype='float') 
+        #x values for detected line pixels
+        self.allx = None  
+        #y values for detected line pixels
+        self.ally = None  
+        # x values of the last n fits of the line
+        self.recent_xfitted = [] 
+        #average x values of the fitted line over the last n iterations
+        self.bestx = np.mean(self.recent_xfitted, axis=0) if len(self.recent_xfitted) !=0 else []    
+        #polynomial coefficients averaged over the last n iterations
+        self.best_fit = np.mean(self.current_fit, axis=0) if len(self.current_fit) !=0 else []
     
     ... methods ...
 ```
