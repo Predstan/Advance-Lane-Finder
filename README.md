@@ -3,7 +3,7 @@
 
 
 <p align="center">
- <a href="https://www.youtube.com/watch?v=g5BhDtoheE4"><img src="./img/overview.gif" alt="Overview" width="50%" height="50%"></a>
+ <a href="https://youtu.be/aiDin-jGEQI"><img src="./readimg/project.gif" alt="Overview" width="50%" height="50%"></a>
  <br>Qualitative results. (click for full video)
 </p>
 
@@ -24,7 +24,7 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[img_overview]: ./img/overview.gif "Output Overview"
+[img_overview]: ./readimg/project.gif "Output Overview"
 
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view)
@@ -49,7 +49,7 @@ I applied this distortion correction to the test image using the `cv2.undistort(
     </th>
     <th>
       <p align="center">
-           <img src="./readimg/calibrate_after.jpg" alt="calibration_after" width="60%" height="60%">
+           <img src="./readimg/caliberate_after.jpg" alt="calibration_after" width="60%" height="60%">
            <br>Chessboard image after calibration
       </p>
     </th>
@@ -72,7 +72,7 @@ We may utilize the camera matrix and distortion coefficients we discovered to un
     </th>
     <th>
       <p align="center">
-           <img src="./readimg/calibrate_after.jpg"
+           <img src="./readimg/caliberate_after.jpg"
            alt="calibration_after" width="60%" height="60%">
            <br>Test image after calibration
       </p>
