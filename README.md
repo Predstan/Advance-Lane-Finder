@@ -159,7 +159,7 @@ class Line():
     ... methods ...
 ```
 
-The actual processing pipeline is implemented in function `process_pipeline()` in [`pipeline.py`](./pipeline.py). As it can be seen, when a detection of lane-lines is available for a previous frame, new lane-lines are searched through `line_utils.get_fits_by_previous_fits()`: otherwise, the more expensive sliding windows search is performed.
+The actual processing pipeline is implemented in function `process_image()` in [`utils.py`](./pipeline.py). As it can be seen, when a detection of lane-lines is available for a previous frame, new lane-lines are searched through `search_previous()`: otherwise, the more expensive sliding windows search is performed.
 
 The qualitative result of this phase is shown here:
 
