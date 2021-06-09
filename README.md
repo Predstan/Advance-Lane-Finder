@@ -66,13 +66,13 @@ We may utilize the camera matrix and distortion coefficients we discovered to un
   <tr>
     <th>
       <p align="center">
-           <img src="./readimg/caliberate_before.jpg"  alt="calibration_before" width="60%" height="60%">
+           <img src="./readimg/binary_before.jpg"  alt="calibration_before" width="60%" height="60%">
            <br>Test image before calibration
       </p>
     </th>
     <th>
       <p align="center">
-           <img src="./readimg/caliberate_after.jpg"
+           <img src="./readimg/und_after.jpg"
            alt="calibration_after" width="60%" height="60%">
            <br>Test image after calibration
       </p>
@@ -121,7 +121,7 @@ We can find the code for warping between the two perspectives [here](./camera ut
 By sketching the src and dst points onto a test image and its warped counterpart to ensure that the lines looked parallel in the warped picture, I was able to confirm that my perspective transform was functioning as planned.
 
 <p align="center">
-  <img src="../readimg/pers_after.jpg" alt="birdeye_view" width="90%" height="90%">
+  <img src="./readimg/pers_after.jpg" alt="birdeye_view" width="90%" height="90%">
 </p>
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
@@ -167,7 +167,7 @@ The qualitative result of this phase is shown here:
   <tr>
     <th>
       <p align="center">
-           <img src="./readimg/pers_after.png" alt="sliding_windows_before" width="60%" height="60%">
+           <img src="./readimg/pers_after.jpg" alt="sliding_windows_before" width="60%" height="60%">
            <br>Bird's-eye view (binary)
       </p>
     </th>
@@ -182,36 +182,54 @@ The qualitative result of this phase is shown here:
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-Offset from center of the lane is computed in `compute_offset_from_center()` as one of the step of the procecssing pipeline defined in [`main.py`](./main.py). The offset from the lane center can be computed under the hypothesis that the camera is fixed and mounted in the midpoint of the car roof. In this case, we can approximate the car's deviation from the lane center as the distance between the center of the image and the midpoint at the bottom of the image of the two lane-lines detected.  
+`Measure_curvature_pixels()` Method computes the offset from the lane's center as one of the processing pipeline's steps. Under the assumption that the camera is fixed and situated at the middle of the vehicle roof, the offset from the lane center may be calculated. In this example, the distance between the center of the picture and the midpoint at the bottom of the picture of the two lane-lines observed may be used to estimate the car's departure from the lane center.
 
-During the previous lane-line detection phase, a 2nd order polynomial is fitted to each lane-line using `np.polyfit()`. This function returns the 3 coefficients that describe the curve, namely the coefficients of both the 2nd and 1st order terms plus the bias. From this coefficients, following [this](http://www.intmath.com/applications-differentiation/8-radius-curvature.php) equation, we can compute the radius of curvature of the curve. From an implementation standpoint, I decided to move this methods as properties of `Line` class.
+np.polyfit() is used to fit a 2nd order polynomial to each lane-line during the preceding lane-line detection phase. This function provides the three coefficients that characterize the curve: the 2nd and 1st order terms' coefficients, as well as the bias. We can calculate the radius of curvature of the curve using these coefficients.. In terms of implementation, I chose to make these methods properties of the Line class.
 
 ```
-class Line:
-  ... other stuff before ...
-    @property
-    # average of polynomial coefficients of the last N iterations
-    def average_fit(self):
-        return np.mean(self.recent_fits_pixel, axis=0)
+def measure_curvature_pixels(ploty, left_fit, right_fit, left_line, right_line):
+    '''
+    Calculates the curvature of polynomial functions in pixels.
+    '''
+  
+    
 
-    @property
-    # radius of curvature of the line (averaged)
-    def curvature(self):
-        y_eval = 0
-        coeffs = self.average_fit
-        return ((1 + (2 * coeffs[0] * y_eval + coeffs[1]) ** 2) ** 1.5) / np.absolute(2 * coeffs[0])
+    y_per_pix = 30 / 720   # meters per pixel in y dimension
+    x_per_pix = 3.7 / 700  # meters per pixel in x dimension
+    
+    leftx, lefty, rightx, righty = left_line.allx, left_line.ally, right_line.allx, right_line.ally
 
-    @property
-    # radius of curvature of the line (averaged)
-    def curvature_meter(self):
-        y_eval = 0
-        coeffs = np.mean(self.recent_fits_meter, axis=0)
-        return ((1 + (2 * coeffs[0] * y_eval + coeffs[1]) ** 2) ** 1.5) / np.absolute(2 * coeffs[0])
+    left_fit = np.polyfit(lefty*y_per_pix, leftx*x_per_pix, 2)
+    right_fit = np.polyfit(righty*y_per_pix, rightx*x_per_pix, 2)
+
+    
+    # Define y-value where we want radius of curvature
+    # We'll choose the maximum y-value, corresponding to the bottom of the image
+    y_eval = np.max(ploty)
+    
+    # Implement the calculation of R_curve (radius of curvature) #####
+    left_curverad = ((1 + (2 * left_fit[0]*y_per_pix + left_fit[1]) **2 ) **1.5)/np.abs(2 * left_fit[0]) ## Implement the calculation of the left line here
+    right_curverad = ((1 + (2 * right_fit[0]*y_per_pix + right_fit[1]) **2 ) **1.5)/np.abs(2 * right_fit[0])  ## Implement the calculation of the right line here
+
+
+    left = left_fit[0]*(720*y_per_pix)**2 + left_fit[1]*720*y_per_pix + left_fit[2]
+    right = right_fit[0]*(720*y_per_pix)**2 + right_fit[1]*720*y_per_pix + right_fit[2]
+
+    # line_lt_bottom = np.mean(left_line.allx[left_line.ally > 0.95 * left_line.ally.max()])
+    # line_rt_bottom = np.mean(right_line.allx[left_line.ally > 0.95 * left_line.ally.max()])
+    # lane_width = line_rt_bottom - line_lt_bottom
+    # midpoint = 1280 / 2
+    # offset_pix = abs((line_lt_bottom + lane_width / 2) - midpoint)
+    # offset_meter = x_per_pix * offset_pix
+    offset_meter = np.abs(640*x_per_pix - np.mean([left, right]))
+    radius = np.mean([left_curverad, right_curverad])
+
+    return left_curverad, right_curverad, radius, offset_meter
 ```
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-The whole processing pipeline, which starts from input frame and comprises undistortion, binarization, lane detection and de-warping back onto the original image, is implemented in function `process_pipeline()` in [`main.py`](./main.py).
+The whole processing pipeline, which starts from input frame and comprises undistortion, binarization, lane detection and de-warping back onto the original image, is implemented in function `process_image()` in [`utils.py`](./utils.py).
 
 The qualitative result for one of the given test images follows:
 
@@ -226,13 +244,12 @@ All other test images can be found in [./output_images/](./output_images/)
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](https://www.youtube.com/watch?v=g5BhDtoheE4).
+Here's a [link to my video result](https://youtu.be/aiDin-jGEQI).
 
 ---
 
 ###Discussion
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
-I find that the more delicate aspect of the pipeline is the first step, namely the binarization of the input frame. Indeed, if that step fails, most of successive steps will lead to poor results. The bad news is that this part is implemented by thresholding the input frame, so we let the correct value of a threshold be our single-point of failure. This is *bad*! Being currently 2017, I think a CNN could be employed to successfully make this step more robust. Some datasets like [Synthia](http://synthia-dataset.net/) should hopefully  provide enough lane marking annotation to train a deep network. I must try this later :-)
-
+I find it Chllanging on the challenge videos and harder challlenge video, I tried to tune the thresholds and used different kind of thresholding. Even though it looks promising, i dont think this method is sufficient enough to be relied upon for a real world self-driving Car. A neural Network Implementation of Image segmenttation may be even better. The challenge of Lightening Condition, and several factors affecting roads especcially the roads in my country is not exactly similar to the american roads. THe vehicle may get confused or break down in recognixing lane lines in Nigeria. I am still employing different threhsolding to see which one is better for all roads condition. I also introduced the region of interest method from the first project to better help me cut out the irrelivant edges that could be present in the binary image.
 
